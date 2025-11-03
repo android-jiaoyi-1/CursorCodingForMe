@@ -1,0 +1,166 @@
+项目需求：纯前端股票交易模拟平台
+技术栈
+框架: React 18 + TypeScript
+UI组件: Ant Design 5.x
+图表: ECharts 5.x
+状态管理: Zustand 或 React Context
+构建工具: Vite
+数据: 完全模拟数据（Mock Data）
+核心功能模块
+1. 用户系统（模拟）
+模拟登录/注册界面
+虚拟资金账户（初始资金10万元）
+用户信息本地存储（localStorage）
+2. 股票买卖交易模块
+// 功能要点
+- 股票搜索框（支持代码/名称搜索）
+- 买卖面板：当前价格、可用资金、买卖数量输入
+- 实时持仓列表（股票代码、数量、成本价、当前价、浮动盈亏）
+- 交易验证：资金充足性、数量有效性
+3. 股票数据展示模块
+分时图: 当日价格走势（9:30-15:00），成交量
+K线图: 日K/周K/月K切换，支持MA、MACD指标
+实时价格更新: 模拟实时价格波动
+4. 历史记录与盈亏分析
+交易记录: 买卖记录表格（时间、股票、方向、价格、数量）
+对账单: 按日筛选，显示当日盈亏
+收益分析: 累计收益曲线、持仓分析、胜率统计
+页面结构设计
+布局组件
+// MainLayout.tsx
+- 顶部导航: 用户信息、余额、退出
+- 左侧菜单: 行情、交易、持仓、历史记录
+- 主内容区: 动态渲染各功能模块
+页面组件
+行情页面(MarketPage)
+自选股列表
+股票搜索与添加
+点击跳转详情
+交易页面(TradePage)
+股票代码输入与搜索
+买卖操作面板
+实时分时图/K线图切换
+持仓页面(PositionPage)
+当前持仓列表
+浮动盈亏统计
+一键清仓功能
+历史记录页面(HistoryPage)
+交易记录表格
+收益曲线图
+对账单导出（模拟）
+数据模拟设计
+Mock数据接口
+// types.ts
+interface Stock {
+  code: string;        // 股票代码
+  name: string;        // 股票名称
+  currentPrice: number; // 当前价
+  change: number;      // 涨跌幅
+  volume: number;      // 成交量
+}
+
+interface KLineData {
+  date: string;        // 日期
+  open: number;        // 开盘价
+  close: number;       // 收盘价
+  high: number;        // 最高价
+  low: number;         // 最低价
+  volume: number;      // 成交量
+}
+
+interface Transaction {
+  id: string;
+  stockCode: string;
+  type: 'buy' | 'sell';
+  price: number;
+  quantity: number;
+  timestamp: Date;
+}
+模拟数据生成器
+// mockData.ts
+- 生成随机股票列表（20-30只）
+- 模拟K线数据（最近3个月）
+- 模拟分时数据（当日）
+- 交易记录模拟
+组件详细规范
+图表组件
+// KLineChart.tsx
+- 使用ECharts绘制专业K线图
+- 支持日K/周K/月K切换
+- 显示MA5、MA10、MA20均线
+- 下方副图显示MACD指标
+
+// TimeSharingChart.tsx  
+- 分时价格曲线（白色）
+- 均价线（黄色）
+- 成交量柱状图
+- 实时刷新动画
+交易组件
+// TradePanel.tsx
+- 买卖按钮组（买/卖）
+- 价格显示（实时更新）
+- 数量输入（支持快捷键：1/4、1/2、全部）
+- 交易金额计算
+- 可用资金验证
+状态管理设计
+// store/useStockStore.ts
+interface StockStore {
+  // 用户数据
+  balance: number;
+  positions: Position[];
+  transactions: Transaction[];
+  
+  // 行情数据
+  stockList: Stock[];
+  currentStock: Stock | null;
+  klineData: KLineData[];
+  
+  // 操作方法
+  buyStock: (code: string, quantity: number) => void;
+  sellStock: (code: string, quantity: number) => void;
+  setCurrentStock: (code: string) => void;
+}
+Cursor生成指令示例
+请使用React+TS+Ant Design实现股票交易页面的TradePanel组件：
+
+要求：
+1. 包含股票代码搜索框（支持模糊搜索）
+2. 显示当前价格、涨跌幅、可用资金
+3. 买卖按钮组，数量输入框
+4. 实时计算交易金额和手续费（0.1%）
+5. 买卖操作验证（资金充足、数量有效）
+
+请先定义TypeScript接口，然后实现组件逻辑，最后添加样式。
+请使用ECharts实现KLineChart组件：
+
+功能：
+1. 接收KLineData[]数据绘制K线图
+2. 支持日K/周K/月K切换
+3. 显示MA5、MA10、MA20均线
+4. 下方副图显示MACD指标
+5. 添加缩放和十字线功能
+
+请提供完整的配置选项和响应式处理。
+文件结构建议
+src/
+  components/
+    charts/          # 图表组件
+      KLineChart.tsx
+      TimeSharingChart.tsx
+    trade/           # 交易组件
+      TradePanel.tsx
+      PositionList.tsx
+    layout/          # 布局组件
+      MainLayout.tsx
+  pages/             # 页面组件
+    MarketPage.tsx
+    TradePage.tsx
+    HistoryPage.tsx
+  stores/            # 状态管理
+    useStockStore.ts
+  types/             # 类型定义
+    stock.ts
+  utils/             # 工具函数
+    mockData.ts
+    calculation.ts
+请根据以上提示词逐步生成各个组件文件，优先实现核心交易功能和图表展示。所有数据使用模拟数据，确保界面美观且功能完整。
