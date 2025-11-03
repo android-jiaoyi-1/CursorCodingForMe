@@ -4,6 +4,8 @@ export interface Stock {
   currentPrice: number;
   change: number; // percentage, e.g., 0.012 = +1.2%
   volume: number;
+  previousClose: number; // ?????
+  limitPercent: number; // ??????? 0.1 ??10%
 }
 
 export interface KLineData {

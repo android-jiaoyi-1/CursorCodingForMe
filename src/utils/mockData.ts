@@ -11,7 +11,11 @@ export function generateStocks(count = 25): Stock[] {
     const price = Number(randomBetween(5, 150).toFixed(2));
     const change = Number(randomBetween(-5, 5).toFixed(2));
     const volume = Math.floor(randomBetween(10000, 500000));
-    list.push({ code, name: `股票${i + 1}`, currentPrice: price, change, volume });
+    // 根据当前价格和涨跌幅计算昨日收盘价
+    const previousClose = Number((price / (1 + change / 100)).toFixed(2));
+    // 普通股票涨跌停幅度为10%
+    const limitPercent = 0.1;
+    list.push({ code, name: `股票${i + 1}`, currentPrice: price, change, volume, previousClose, limitPercent });
   }
   return list;
 }

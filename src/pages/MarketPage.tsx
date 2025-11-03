@@ -18,7 +18,13 @@ export function MarketPage() {
   return (
     <div>
       <Card title="分时图">
-        {currentStock && <TimeSharingChart data={intradayMap[currentStock.code] || []} />}
+        {currentStock && (
+          <TimeSharingChart 
+            data={intradayMap[currentStock.code] || []} 
+            previousClose={currentStock.previousClose}
+            limitPercent={currentStock.limitPercent}
+          />
+        )}
       </Card>
       <Card title="自选列表" style={{ marginTop: 16 }}>
         <Input.Search placeholder="搜索股票" value={q} onChange={(e) => setQ(e.target.value)} style={{ marginBottom: 12 }} />

@@ -36,7 +36,15 @@ export const TradePage: React.FC = () => {
           value={mode}
           onChange={(v) => setMode(v as any)}
         />
-        {mode === 'k' ? <KLineChart data={klineData} /> : <TimeSharingChart points={timePoints} />}
+        {mode === 'k' ? (
+          <KLineChart data={klineData} />
+        ) : (
+          <TimeSharingChart 
+            points={timePoints} 
+            previousClose={currentStock?.previousClose}
+            limitPercent={currentStock?.limitPercent}
+          />
+        )}
         {!currentStock && <div style={{ marginTop: 8 }}>请选择一只股票开始交易与查看图表</div>}
       </Col>
     </Row>

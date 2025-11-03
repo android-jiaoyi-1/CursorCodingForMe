@@ -33,12 +33,19 @@ export function generateStockList(count = 20): Stock[] {
   for (const [code, name] of picked) {
     const base = randomBetween(10, 500);
     const change = randomBetween(-0.05, 0.05);
+    const currentPrice = +(base * (1 + change)).toFixed(2);
+    // 根据当前价格和涨跌幅计算昨日收盘价
+    const previousClose = +(base).toFixed(2);
+    // 普通股票涨跌停幅度为10%
+    const limitPercent = 0.1;
     list.push({
       code,
       name,
-      currentPrice: +(base * (1 + change)).toFixed(2),
+      currentPrice,
       change,
       volume: Math.floor(randomBetween(1e5, 1e7)),
+      previousClose,
+      limitPercent,
     });
   }
   return list;
