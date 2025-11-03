@@ -4,7 +4,16 @@ import { useStockStore } from '@/stores/useStockStore';
 import { TimeSharingChart } from '@/components/charts/TimeSharingChart';
 
 export function MarketPage() {
-  const { stockList, currentStock, setCurrentStock, init, intradayMap, klineData } = useStockStore();
+  const {
+    stockList,
+    currentStock,
+    setCurrentStock,
+    init,
+    intradayMap,
+    klineData,
+    previousCloseMap,
+    limitAmplitudeMap,
+  } = useStockStore();
   const [q, setQ] = useState('');
 
   useEffect(() => { init(); }, [init]);
@@ -15,18 +24,28 @@ export function MarketPage() {
     return stockList.filter(s => s.code.toLowerCase().includes(lq) || s.name.toLowerCase().includes(lq));
   }, [q, stockList]);
 
-  // 获取昨日收盘价（从K线数据中获取最后一天的收盘价）
-  const yesterdayClosePrice = useMemo(() => {
+  const fallbackYesterdayClose = useMemo(() => {
     if (klineData.length === 0) return undefined;
-    // 获取最后一天的收盘价作为昨日收盘价
     const lastKLine = klineData[klineData.length - 1];
-    return lastKLine.close;
+    return lastKLine?.close;
   }, [klineData]);
+
+  const chartPreviousClose = currentStock
+    ? previousCloseMap[currentStock.code] ?? fallbackYesterdayClose
+    : fallbackYesterdayClose;
+
+  const chartLimitAmplitude = currentStock ? limitAmplitudeMap[currentStock.code] : undefined;
 
   return (
     <div>
       <Card title="分时图">
-        {currentStock && <TimeSharingChart data={intradayMap[currentStock.code] || []} yesterdayClosePrice={yesterdayClosePrice} />}
+        {currentStock && (
+          <TimeSharingChart
+            data={intradayMap[currentStock.code] || []}
+            previousClose={chartPreviousClose}
+            limitAmplitude={chartLimitAmplitude}
+          />
+        )}
       </Card>
       <Card title="自选列表" style={{ marginTop: 16 }}>
         <Input.Search placeholder="搜索股票" value={q} onChange={(e) => setQ(e.target.value)} style={{ marginBottom: 12 }} />

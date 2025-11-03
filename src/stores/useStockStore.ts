@@ -13,6 +13,8 @@ interface StockStore {
   klineData: KLineData[];
   intradayMap: Record<string, TimePoint[]>;
   openPriceMap: Record<string, number>;
+  previousCloseMap: Record<string, number>;
+  limitAmplitudeMap: Record<string, number>;
   _timer?: number;
 
   buyStock: (code: string, quantity: number) => void;
@@ -32,6 +34,8 @@ export const useStockStore = create<StockStore>()(
     klineData: [],
     intradayMap: {},
     openPriceMap: {},
+    previousCloseMap: {},
+    limitAmplitudeMap: {},
 
     init: () => {
       const stockList = generateStocks(25);
@@ -39,9 +43,15 @@ export const useStockStore = create<StockStore>()(
       const klineData = generateKline(90, currentStock?.currentPrice ?? 30);
       const intradayMap: Record<string, TimePoint[]> = {};
       const openPriceMap: Record<string, number> = {};
+      const previousCloseMap: Record<string, number> = {};
+      const limitAmplitudeMap: Record<string, number> = {};
+      const DEFAULT_LIMIT_AMPLITUDE = 0.1;
       stockList.forEach(s => {
         intradayMap[s.code] = generateIntradaySeries(s.currentPrice, 60);
         openPriceMap[s.code] = s.currentPrice;
+        const inferredPrevClose = Number((s.currentPrice / (1 + s.change / 100)).toFixed(2)) || s.currentPrice;
+        previousCloseMap[s.code] = inferredPrevClose;
+        limitAmplitudeMap[s.code] = DEFAULT_LIMIT_AMPLITUDE;
       });
       const transactions = generateTransactions(8);
       set((state) => {
@@ -51,6 +61,8 @@ export const useStockStore = create<StockStore>()(
         state.transactions = transactions;
         state.intradayMap = intradayMap;
         state.openPriceMap = openPriceMap;
+        state.previousCloseMap = previousCloseMap;
+        state.limitAmplitudeMap = limitAmplitudeMap;
       });
       // 启动实时更新定时器
       const tick = () => {
@@ -61,7 +73,8 @@ export const useStockStore = create<StockStore>()(
           const { series, price } = nextIntradayTick(prevSeries, last);
           st.intradayMap[s.code] = series;
           const open = st.openPriceMap[s.code] ?? price;
-          const change = Number((((price - open) / open) * 100).toFixed(2));
+          const prevClose = st.previousCloseMap[s.code] ?? open;
+          const change = Number((((price - prevClose) / prevClose) * 100).toFixed(2));
           return { ...s, currentPrice: price, change };
         });
         set((state) => {

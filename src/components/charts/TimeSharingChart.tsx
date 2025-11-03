@@ -7,43 +7,44 @@ import { TimePoint } from '@/types/stock';
 
 echarts.use([LineChart, BarChart, GridComponent, TooltipComponent, DataZoomComponent, CanvasRenderer]);
 
-// 涨跌停幅度，通常为10%
-const PRICE_LIMIT_RATIO = 0.1;
+const DEFAULT_LIMIT_AMPLITUDE = 0.1;
 
-interface Props { 
+interface Props {
   data: TimePoint[];
-  yesterdayClosePrice?: number; // 昨日收盘价
+  previousClose?: number;
+  limitAmplitude?: number;
 }
 
-export function TimeSharingChart({ data, yesterdayClosePrice }: Props) {
+export function TimeSharingChart({ data, previousClose, limitAmplitude }: Props) {
   const ref = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<echarts.EChartsType | null>(null);
 
   const seriesData = useMemo(() => data, [data]);
+  const priceSeries = useMemo(() => seriesData.map(p => p.price), [seriesData]);
+  const avgSeries = useMemo(() => seriesData.map(p => p.avg), [seriesData]);
 
-  // 计算Y轴范围
-  const yAxisRange = useMemo(() => {
-    if (!yesterdayClosePrice) {
-      // 如果没有昨日收盘价，使用数据的最大值和最小值
-      const prices = seriesData.map(p => p.price);
-      const minPrice = Math.min(...prices);
-      const maxPrice = Math.max(...prices);
-      const padding = (maxPrice - minPrice) * 0.1;
-      return {
-        min: minPrice - padding,
-        max: maxPrice + padding
-      };
+  type Bounds = { lower: number; upper: number } | undefined;
+
+  const yAxisBounds = useMemo<Bounds>(() => {
+    const limit = typeof limitAmplitude === 'number' ? limitAmplitude : DEFAULT_LIMIT_AMPLITUDE;
+    if (previousClose && previousClose > 0 && limit > 0) {
+      const upper = Number((previousClose * (1 + limit)).toFixed(2));
+      const lower = Number((previousClose * (1 - limit)).toFixed(2));
+      return { upper, lower };
     }
-    
-    // 根据公式计算：最大值 = 昨日收盘价 × (1 + 涨跌停幅度)，最小值 = 昨日收盘价 × (1 - 涨跌停幅度)
-    const maxPrice = yesterdayClosePrice * (1 + PRICE_LIMIT_RATIO);
-    const minPrice = yesterdayClosePrice * (1 - PRICE_LIMIT_RATIO);
-    
+    const allValues = [...priceSeries, ...avgSeries].filter((v) => Number.isFinite(v));
+    if (allValues.length === 0) {
+      return undefined;
+    }
+    const baseMax = Math.max(...allValues);
+    const baseMin = Math.min(...allValues);
+    const range = baseMax - baseMin;
+    const padding = range === 0 ? (baseMax || 1) * 0.05 : range * 0.1;
     return {
-      min: Number(minPrice.toFixed(2)),
-      max: Number(maxPrice.toFixed(2))
+      upper: Number((baseMax + padding).toFixed(2)),
+      lower: Number((baseMin - padding).toFixed(2)),
     };
-  }, [yesterdayClosePrice, seriesData]);
+  }, [avgSeries, limitAmplitude, previousClose, priceSeries]);
 
   useEffect(() => {
     if (!ref.current) return;
@@ -51,20 +52,31 @@ export function TimeSharingChart({ data, yesterdayClosePrice }: Props) {
       chartRef.current = echarts.init(ref.current);
       window.addEventListener('resize', () => chartRef.current?.resize());
     }
-    const option: echarts.EChartsCoreOption = {
+    const priceAxis: {
+      splitNumber: number;
+      axisLabel: { formatter: (value: number) => string };
+      min?: number;
+      max?: number;
+      scale?: boolean;
+    } = {
+      splitNumber: 6,
+      axisLabel: { formatter: (value: number) => value.toFixed(2) },
+      scale: false,
+    };
+    if (yAxisBounds) {
+      priceAxis.min = yAxisBounds.lower;
+      priceAxis.max = yAxisBounds.upper;
+    }
+    const option = {
       tooltip: { trigger: 'axis' },
       grid: [{ left: 50, right: 20, height: 220 }, { left: 50, right: 20, top: 300, height: 80 }],
       xAxis: [
         { type: 'category', data: seriesData.map(p => p.time), boundaryGap: false },
         { type: 'category', gridIndex: 1, data: seriesData.map(p => p.time), axisLabel: { show: false } }
       ],
-      yAxis: [ 
-        { 
-          min: yAxisRange.min,
-          max: yAxisRange.max,
-          scale: false
-        }, 
-        { gridIndex: 1 } 
+      yAxis: [
+        priceAxis,
+        { gridIndex: 1, axisLabel: { formatter: (value: number) => value.toFixed(0) } },
       ],
       series: [
         { name: '价格', type: 'line', data: seriesData.map(p => p.price), smooth: true, showSymbol: false, lineStyle: { color: '#1677ff' } },
@@ -73,7 +85,7 @@ export function TimeSharingChart({ data, yesterdayClosePrice }: Props) {
       ]
     };
     chartRef.current.setOption(option, true);
-  }, [seriesData, yAxisRange]);
+  }, [seriesData, yAxisBounds]);
 
   return <div className="chart-container" ref={ref} />;
 }
