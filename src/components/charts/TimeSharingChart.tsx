@@ -7,29 +7,43 @@ import { TimePoint } from '@/types/stock';
 
 echarts.use([LineChart, BarChart, GridComponent, TooltipComponent, DataZoomComponent, CanvasRenderer]);
 
+// 涨跌停幅度，通常为10%
+const PRICE_LIMIT_RATIO = 0.1;
+
 interface Props { 
   data: TimePoint[];
-  previousClose?: number; // 昨日收盘价
-  limitPercent?: number; // 涨跌停幅度
+  yesterdayClosePrice?: number; // 昨日收盘价
 }
 
-export function TimeSharingChart({ data, previousClose, limitPercent = 0.1 }: Props) {
+export function TimeSharingChart({ data, yesterdayClosePrice }: Props) {
   const ref = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<echarts.EChartsType | null>(null);
 
   const seriesData = useMemo(() => data, [data]);
 
-  // 计算Y轴的最大值和最小值
-  const { yMin, yMax } = useMemo(() => {
-    if (previousClose) {
+  // 计算Y轴范围
+  const yAxisRange = useMemo(() => {
+    if (!yesterdayClosePrice) {
+      // 如果没有昨日收盘价，使用数据的最大值和最小值
+      const prices = seriesData.map(p => p.price);
+      const minPrice = Math.min(...prices);
+      const maxPrice = Math.max(...prices);
+      const padding = (maxPrice - minPrice) * 0.1;
       return {
-        yMax: Number((previousClose * (1 + limitPercent)).toFixed(2)),
-        yMin: Number((previousClose * (1 - limitPercent)).toFixed(2))
+        min: minPrice - padding,
+        max: maxPrice + padding
       };
     }
-    // 如果没有提供昨日收盘价，则使用自动计算
-    return { yMin: undefined, yMax: undefined };
-  }, [previousClose, limitPercent]);
+    
+    // 根据公式计算：最大值 = 昨日收盘价 × (1 + 涨跌停幅度)，最小值 = 昨日收盘价 × (1 - 涨跌停幅度)
+    const maxPrice = yesterdayClosePrice * (1 + PRICE_LIMIT_RATIO);
+    const minPrice = yesterdayClosePrice * (1 - PRICE_LIMIT_RATIO);
+    
+    return {
+      min: Number(minPrice.toFixed(2)),
+      max: Number(maxPrice.toFixed(2))
+    };
+  }, [yesterdayClosePrice, seriesData]);
 
   useEffect(() => {
     if (!ref.current) return;
@@ -45,7 +59,11 @@ export function TimeSharingChart({ data, previousClose, limitPercent = 0.1 }: Pr
         { type: 'category', gridIndex: 1, data: seriesData.map(p => p.time), axisLabel: { show: false } }
       ],
       yAxis: [ 
-        { min: yMin, max: yMax, scale: !previousClose }, 
+        { 
+          min: yAxisRange.min,
+          max: yAxisRange.max,
+          scale: false
+        }, 
         { gridIndex: 1 } 
       ],
       series: [
@@ -55,9 +73,8 @@ export function TimeSharingChart({ data, previousClose, limitPercent = 0.1 }: Pr
       ]
     };
     chartRef.current.setOption(option, true);
-  }, [seriesData, yMin, yMax, previousClose]);
+  }, [seriesData, yAxisRange]);
 
   return <div className="chart-container" ref={ref} />;
 }
-
 
