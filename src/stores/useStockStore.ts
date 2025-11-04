@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import { KLineData, Position, Stock, Transaction, TimePoint } from '@/types/stock';
+import { KLineData, Position, Stock, Transaction, TimePoint, BSPoint } from '@/types/stock';
 import { generateIntradaySeries, generateKline, generateStocks, generateTransactions, nextIntradayTick } from '@/utils/mockData';
 
 interface StockStore {
   balance: number;
   positions: Position[];
   transactions: Transaction[];
+  bsPoints: BSPoint[]; // BS点数据
 
   stockList: Stock[];
   currentStock: Stock | null;
@@ -26,6 +27,7 @@ export const useStockStore = create<StockStore>()(
     balance: 100000,
     positions: [],
     transactions: [],
+    bsPoints: [],
 
     stockList: [],
     currentStock: null,
@@ -96,6 +98,9 @@ export const useStockStore = create<StockStore>()(
       const fee = amount * 0.001;
       const total = amount + fee;
       if (get().balance < total) return;
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0]; // yyyy-MM-dd
+      const timeStr = now.toTimeString().slice(0, 5); // HH:mm
       set((state) => {
         state.balance -= Number(total.toFixed(2));
         const pos = state.positions.find((p) => p.stockCode === code);
@@ -106,13 +111,25 @@ export const useStockStore = create<StockStore>()(
         } else {
           state.positions.push({ stockCode: stock.code, stockName: stock.name, quantity, costPrice: stock.currentPrice });
         }
-        state.transactions.unshift({
+        const transaction = {
           id: String(Date.now()),
+          stockCode: code,
+          type: 'buy' as const,
+          price: stock.currentPrice,
+          quantity,
+          timestamp: now.toISOString(),
+        };
+        state.transactions.unshift(transaction);
+        // 生成B点（买入点）
+        state.bsPoints.push({
+          id: `bs-${Date.now()}`,
           stockCode: code,
           type: 'buy',
           price: stock.currentPrice,
           quantity,
-          timestamp: new Date().toISOString(),
+          timestamp: now.toISOString(),
+          date: dateStr,
+          time: timeStr,
         });
       });
     },
@@ -120,6 +137,9 @@ export const useStockStore = create<StockStore>()(
     sellStock: (code, quantity) => {
       const stock = get().stockList.find((s) => s.code === code);
       if (!stock) return;
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0]; // yyyy-MM-dd
+      const timeStr = now.toTimeString().slice(0, 5); // HH:mm
       set((state) => {
         const pos = state.positions.find((p) => p.stockCode === code);
         if (!pos || pos.quantity < quantity) return;
@@ -131,13 +151,25 @@ export const useStockStore = create<StockStore>()(
         if (pos.quantity === 0) {
           state.positions = state.positions.filter((p) => p.stockCode !== code);
         }
-        state.transactions.unshift({
+        const transaction = {
           id: String(Date.now()),
+          stockCode: code,
+          type: 'sell' as const,
+          price: stock.currentPrice,
+          quantity,
+          timestamp: now.toISOString(),
+        };
+        state.transactions.unshift(transaction);
+        // 生成S点（卖出点）
+        state.bsPoints.push({
+          id: `bs-${Date.now()}`,
           stockCode: code,
           type: 'sell',
           price: stock.currentPrice,
           quantity,
-          timestamp: new Date().toISOString(),
+          timestamp: now.toISOString(),
+          date: dateStr,
+          time: timeStr,
         });
       });
     },

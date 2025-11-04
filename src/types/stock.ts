@@ -38,4 +38,15 @@ export interface TimePoint {
   vol: number;
 }
 
+export interface BSPoint {
+  id: string;
+  stockCode: string;
+  type: 'buy' | 'sell'; // B点=买入，S点=卖出
+  price: number;
+  quantity: number;
+  timestamp: string; // ISO string
+  date?: string; // yyyy-MM-dd，用于K线图匹配
+  time?: string; // HH:mm，用于分时图匹配
+}
+
 
