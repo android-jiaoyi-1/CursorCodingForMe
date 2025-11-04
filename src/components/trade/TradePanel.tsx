@@ -14,7 +14,7 @@ export function TradePanel() {
 
   const amount = useMemo(() => calculateAmount(currentStock?.currentPrice ?? 0, quantity || 0), [currentStock, quantity]);
   const fee = useMemo(() => calculateFee(amount), [amount]);
-  const actualSide = side === 'buy' ? 'sell' : 'buy';
+  const actualSide = side; // 修复：actualSide应该等于side，而不是反的
   const actualActionText = actualSide === 'buy' ? '买入' : '卖出';
   const displayedActionText = side === 'buy' ? '买入' : '卖出';
 

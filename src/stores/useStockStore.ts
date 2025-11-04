@@ -19,6 +19,7 @@ interface StockStore {
   sellStock: (code: string, quantity: number) => void;
   setCurrentStock: (code: string) => void;
   init: () => void;
+  cleanup: () => void; // 修复：添加清理方法
 }
 
 export const useStockStore = create<StockStore>()(
@@ -55,17 +56,19 @@ export const useStockStore = create<StockStore>()(
       // 启动实时更新定时器
       const tick = () => {
         const st = get();
+        const updatedIntradayMap: Record<string, TimePoint[]> = {};
         const updatedStockList = st.stockList.map(s => {
           const prevSeries = st.intradayMap[s.code] ?? [];
           const last = prevSeries[prevSeries.length - 1]?.price ?? s.currentPrice;
           const { series, price } = nextIntradayTick(prevSeries, last);
-          st.intradayMap[s.code] = series;
+          updatedIntradayMap[s.code] = series; // 修复：收集更新后的数据，不要直接修改state
           const open = st.openPriceMap[s.code] ?? price;
           const change = Number((((price - open) / open) * 100).toFixed(2));
           return { ...s, currentPrice: price, change };
         });
         set((state) => {
           state.stockList = updatedStockList;
+          state.intradayMap = { ...state.intradayMap, ...updatedIntradayMap }; // 修复：通过set更新intradayMap
           if (state.currentStock) {
             const cs = updatedStockList.find(x => x.code === state.currentStock!.code) || state.currentStock;
             state.currentStock = cs;
@@ -140,6 +143,13 @@ export const useStockStore = create<StockStore>()(
           timestamp: new Date().toISOString(),
         });
       });
+
+    cleanup: () => {
+      const timer = get()._timer;
+      if (timer) {
+        window.clearInterval(timer); // 修复：清理定时器
+        set((state) => { state._timer = undefined; });
+      }
     },
   }))
 );

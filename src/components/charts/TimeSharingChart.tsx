@@ -19,8 +19,9 @@ export function TimeSharingChart({ data }: Props) {
     if (!ref.current) return;
     if (!chartRef.current) {
       chartRef.current = echarts.init(ref.current);
-      window.addEventListener('resize', () => chartRef.current?.resize());
     }
+    const handleResize = () => chartRef.current?.resize();
+    window.addEventListener('resize', handleResize);
     const option: echarts.EChartsOption = {
       tooltip: { trigger: 'axis' },
       grid: [{ left: 50, right: 20, height: 220 }, { left: 50, right: 20, top: 300, height: 80 }],
@@ -36,6 +37,9 @@ export function TimeSharingChart({ data }: Props) {
       ]
     };
     chartRef.current.setOption(option, true);
+    return () => {
+      window.removeEventListener('resize', handleResize); // 修复：清理事件监听器
+    };
   }, [seriesData]);
 
   return <div className="chart-container" ref={ref} />;

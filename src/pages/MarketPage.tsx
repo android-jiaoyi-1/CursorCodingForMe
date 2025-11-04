@@ -4,10 +4,15 @@ import { useStockStore } from '@/stores/useStockStore';
 import { TimeSharingChart } from '@/components/charts/TimeSharingChart';
 
 export function MarketPage() {
-  const { stockList, currentStock, setCurrentStock, init, intradayMap } = useStockStore();
+  const { stockList, currentStock, setCurrentStock, init, cleanup, intradayMap } = useStockStore();
   const [q, setQ] = useState('');
 
-  useEffect(() => { init(); }, [init]);
+  useEffect(() => {
+    init();
+    return () => {
+      cleanup(); // 修复：组件卸载时清理定时器
+    };
+  }, [init, cleanup]);
 
   const list = useMemo(() => {
     if (!q) return stockList;

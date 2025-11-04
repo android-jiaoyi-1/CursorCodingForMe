@@ -36,8 +36,9 @@ export function KLineChart({ data }: Props) {
     if (!ref.current) return;
     if (!chartRef.current) {
       chartRef.current = echarts.init(ref.current);
-      window.addEventListener('resize', () => chartRef.current?.resize());
     }
+    const handleResize = () => chartRef.current?.resize();
+    window.addEventListener('resize', handleResize);
     chartRef.current.setOption({
       legend: { data: ['K线', 'MA5', 'MA10', 'MA20'] },
       tooltip: { trigger: 'axis' },
@@ -56,6 +57,9 @@ export function KLineChart({ data }: Props) {
         { name: '成交量', type: 'bar', xAxisIndex: 1, yAxisIndex: 1, data: seriesData.vol }
       ]
     });
+    return () => {
+      window.removeEventListener('resize', handleResize); // 修复：清理事件监听器
+    };
   }, [seriesData]);
 
   return <div className="chart-container" ref={ref} />;

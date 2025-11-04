@@ -6,8 +6,13 @@ import { TradePanel } from '@/components/trade/TradePanel';
 import { PositionList } from '@/components/trade/PositionList';
 
 export function TradePage() {
-  const { init, klineData } = useStockStore();
-  useEffect(() => { init(); }, [init]);
+  const { init, cleanup, klineData } = useStockStore();
+  useEffect(() => {
+    init();
+    return () => {
+      cleanup(); // 修复：组件卸载时清理定时器
+    };
+  }, [init, cleanup]);
 
   return (
     <div>
