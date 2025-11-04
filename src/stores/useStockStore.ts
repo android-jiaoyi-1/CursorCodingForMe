@@ -100,8 +100,9 @@ export const useStockStore = create<StockStore>()(
         state.balance -= Number(total.toFixed(2));
         const pos = state.positions.find((p) => p.stockCode === code);
         if (pos) {
-          const newQty = pos.quantity + quantity;
-          pos.costPrice = Number(((pos.costPrice * pos.quantity + stock.currentPrice * quantity) / newQty).toFixed(2));
+          const oldQty = pos.quantity;
+          const newQty = oldQty + quantity;
+          pos.costPrice = Number(((pos.costPrice * oldQty + stock.currentPrice * quantity) / newQty).toFixed(2));
           pos.quantity = newQty;
         } else {
           state.positions.push({ stockCode: stock.code, stockName: stock.name, quantity, costPrice: stock.currentPrice });

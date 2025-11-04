@@ -14,13 +14,10 @@ export function TradePanel() {
 
   const amount = useMemo(() => calculateAmount(currentStock?.currentPrice ?? 0, quantity || 0), [currentStock, quantity]);
   const fee = useMemo(() => calculateFee(amount), [amount]);
-  const actualSide = side === 'buy' ? 'sell' : 'buy';
-  const actualActionText = actualSide === 'buy' ? '买入' : '卖出';
-  const displayedActionText = side === 'buy' ? '买入' : '卖出';
 
   const handleQuick = (ratio: number) => {
     if (!currentStock) return;
-    if (actualSide === 'buy') {
+    if (side === 'buy') {
       const maxQty = Math.floor((balance / (currentStock.currentPrice * (1 + 0.001))) / 100) * 100;
       setQuantity(Math.max(100, Math.floor((maxQty * ratio) / 100) * 100));
     } else {
@@ -36,14 +33,14 @@ export function TradePanel() {
       message.error('数量需为正数且为100的整数倍');
       return;
     }
-    if (actualSide === 'buy') {
+    if (side === 'buy') {
       const total = amount + fee;
       if (total > balance) {
         message.error('资金不足');
         return;
       }
       buyStock(currentStock.code, quantity);
-      message.success(`${actualActionText}成功`);
+      message.success('买入成功');
     } else {
       const pos = useStockStore.getState().positions.find(p => p.stockCode === currentStock.code);
       if (!pos || pos.quantity < quantity) {
@@ -51,7 +48,7 @@ export function TradePanel() {
         return;
       }
       sellStock(currentStock.code, quantity);
-      message.success(`${actualActionText}成功`);
+      message.success('卖出成功');
     }
   };
 
@@ -79,7 +76,7 @@ export function TradePanel() {
               <Button onClick={() => handleQuick(100)}>全部</Button>
             </Space>
             <InputNumber addonBefore="数量" addonAfter="股" min={100} step={100} value={quantity} onChange={(v) => setQuantity(Number(v))} style={{ width: '100%' }} />
-            <Button type="primary" onClick={submit}>提交{displayedActionText}</Button>
+            <Button type="primary" onClick={submit}>提交{side === 'buy' ? '买入' : '卖出'}</Button>
           </Space>
         </Col>
         <Col span={16}>
@@ -98,7 +95,7 @@ export function TradePanel() {
           <Row gutter={16}>
             <Col span={8}><Statistic title="交易金额" value={amount} precision={2} prefix="¥" /></Col>
             <Col span={8}><Statistic title="手续费(0.1%)" value={fee} precision={2} prefix="¥" /></Col>
-            <Col span={8}><Statistic title="合计" value={actualSide === 'buy' ? amount + fee : amount - fee} precision={2} prefix="¥" /></Col>
+            <Col span={8}><Statistic title="合计" value={side === 'buy' ? amount + fee : amount - fee} precision={2} prefix="¥" /></Col>
           </Row>
         </Col>
       </Row>
