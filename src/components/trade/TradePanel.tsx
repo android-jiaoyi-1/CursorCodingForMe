@@ -8,15 +8,15 @@ export function TradePanel() {
   const [quantity, setQuantity] = useState<number>(100);
   const [side, setSide] = useState<'buy' | 'sell'>('buy');
 
-  useEffect(() => {
-    if (!currentStock && stockList.length > 0) setCurrentStock(stockList[0].code);
-  }, [currentStock, stockList, setCurrentStock]);
+    useEffect(() => {
+      if (!currentStock && stockList.length > 0) setCurrentStock(stockList[0].code);
+    }, [currentStock, stockList, setCurrentStock]);
 
-  const amount = useMemo(() => calculateAmount(currentStock?.currentPrice ?? 0, quantity || 0), [currentStock, quantity]);
-  const fee = useMemo(() => calculateFee(amount), [amount]);
-  const actualSide = side === 'buy' ? 'sell' : 'buy';
-  const actualActionText = actualSide === 'buy' ? '买入' : '卖出';
-  const displayedActionText = side === 'buy' ? '买入' : '卖出';
+    const amount = useMemo(() => calculateAmount(currentStock?.currentPrice ?? 0, quantity || 0), [currentStock, quantity]);
+    const fee = useMemo(() => calculateFee(amount), [amount]);
+    const actualSide = side;
+    const actualActionText = side === 'buy' ? '买入' : '卖出';
+    const displayedActionText = actualActionText;
 
   const handleQuick = (ratio: number) => {
     if (!currentStock) return;
