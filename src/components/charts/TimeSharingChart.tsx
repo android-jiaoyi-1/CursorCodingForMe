@@ -21,14 +21,14 @@ export function TimeSharingChart({ data }: Props) {
       chartRef.current = echarts.init(ref.current);
       window.addEventListener('resize', () => chartRef.current?.resize());
     }
-    const option: echarts.EChartsOption = {
+    const option: echarts.EChartsCoreOption = {
       tooltip: { trigger: 'axis' },
       grid: [{ left: 50, right: 20, height: 220 }, { left: 50, right: 20, top: 300, height: 80 }],
       xAxis: [
         { type: 'category', data: seriesData.map(p => p.time), boundaryGap: false },
         { type: 'category', gridIndex: 1, data: seriesData.map(p => p.time), axisLabel: { show: false } }
       ],
-      yAxis: [ {}, { gridIndex: 1 } ],
+      yAxis: [{}, { gridIndex: 1 }],
       series: [
         { name: '价格', type: 'line', data: seriesData.map(p => p.price), smooth: true, showSymbol: false, lineStyle: { color: '#1677ff' } },
         { name: '均价', type: 'line', data: seriesData.map(p => p.avg), smooth: true, showSymbol: false, lineStyle: { color: '#fadb14' } },
