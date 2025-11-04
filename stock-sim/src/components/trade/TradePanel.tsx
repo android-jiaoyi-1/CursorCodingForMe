@@ -16,11 +16,10 @@ export const TradePanel: React.FC = () => {
   const price = currentStock?.currentPrice ?? 0;
   const amount = calcAmount(price, quantity);
   const fee = calcFee(amount, 0.001);
-  const actualMode = mode === 'buy' ? 'sell' : 'buy';
-  const actualActionText = actualMode === 'buy' ? '买入' : '卖出';
+  const actionText = mode === 'buy' ? '买入' : '卖出';
 
   const onQuick = (ratio: number) => {
-    if (actualMode === 'buy') {
+    if (mode === 'buy') {
       const maxQty = Math.floor(balance / price);
       setQuantity(clampQuantity(maxQty * ratio));
     } else {
@@ -33,12 +32,12 @@ export const TradePanel: React.FC = () => {
   const onSubmit = () => {
     if (!currentStock) return message.warning('请先选择股票');
     if (quantity <= 0) return message.warning('数量必须大于0');
-    const err = actualMode === 'buy'
+    const err = mode === 'buy'
       ? buyStock(currentStock.code, quantity)
       : sellStock(currentStock.code, quantity);
     if (err) message.error(err);
     else {
-      message.success(`${actualActionText}成功`);
+      message.success(`${actionText}成功`);
       setQuantity(0);
     }
   };
@@ -81,7 +80,7 @@ export const TradePanel: React.FC = () => {
         <Row gutter={16}>
           <Col span={8}><Statistic title="交易金额" value={amount} precision={2} /></Col>
           <Col span={8}><Statistic title="手续费(0.1%)" value={fee} precision={2} /></Col>
-          <Col span={8}><Statistic title="实付/实收" value={actualMode === 'buy' ? amount + fee : amount - fee} precision={2} /></Col>
+          <Col span={8}><Statistic title="实付/实收" value={mode === 'buy' ? amount + fee : amount - fee} precision={2} /></Col>
         </Row>
       </Space>
     </Card>
